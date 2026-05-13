@@ -47,6 +47,7 @@ Every donation is highly apreciated, this is compeletely optional.
 - [UniversalSynapseSaveInstance (USSI)](https://github.com/luau/UniversalSynSaveInstance)
 - [Advanced Decompiler](https://github.com/w-a-e/Advanced-Decompiler-V3)
 - [Shiny](https://github.com/rocult/shiny)/[Medal](https://github.com/shrimp-nz/medal)
+- [Lua.Expert](https://lua.expert/)
 
 ## License
 [![Dex++ License](https://img.shields.io/badge/Dex++-License-green)](https://github.com/AZYsGithub/DexPlusPlus/blob/main/LICENSE)
