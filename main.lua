@@ -120,8 +120,8 @@ DefaultSettings = (function()
 			Transparency = .2
 		},
 		Decompiler = {
-			DecompilerFallback = "Konstant", --Konstant, Shiny, AdvancedDecompiler
-			PreferDecompilerFallback = false,
+			DecompilerFallback = "Lua.Expert", --Konstant, Shiny, AdvancedDecompiler, Lua.Expert
+			PreferDecompilerFallback = true,
 			ShinyDecompilerPort = 3000,
 		},
 		
@@ -615,6 +615,59 @@ Main = (function()
 				}
 			).Body
 		end
+		
+-- New Added (Lua.Expert Decompiler)
+local lastLuaExpert = 0
+
+local function LuaExpertDec(...)
+	local API = "https://api.lua.expert/decompile"
+	local httpservice = cloneref and cloneref(game:GetService("HttpService")) or game:GetService("HttpService")
+
+	local scriptObj = ...
+
+	local ok, bytecode = pcall(env.getscriptbytecode, scriptObj)
+	if not ok then
+		return "-- failed to get script bytecode\n--[[\n" .. tostring(bytecode) .. "\n--]]"
+	end
+
+	local elapsed = os.clock() - lastLuaExpert
+	if elapsed < 0.2 then
+		task.wait(0.2 - elapsed)
+	end
+
+	local encoder = base64_encode or function(data)
+		return data
+	end
+
+	local res = env.request({
+		Url = API,
+		Method = "POST",
+		Headers = {
+			["content-type"] = "application/json"
+		},
+		Body = httpservice:JSONEncode({
+			script = encoder(bytecode)
+		})
+	})
+
+	lastLuaExpert = os.clock()
+
+	if not res or type(res) ~= "table" or res.StatusCode ~= 200 then
+		return "-- Lua.Expert error\n--[[\n" .. tostring(res and res.Body or "no response") .. "\n--]]"
+	end
+
+	local output = res.Body
+
+	pcall(function()
+		local decoded = httpservice:JSONDecode(res.Body)
+		if decoded then
+			output = decoded.result or decoded.output or decoded
+		end
+	end)
+
+	return output
+end
+		
 		env.decompile = function(...)
 			if typeof(decompile) == "function" and Settings.Decompiler.PreferDecompilerFallback == false then
 				return decompile(...)
@@ -626,7 +679,10 @@ Main = (function()
 				elseif fallbackMode == "AdvancedDecompiler" then
 					return ADDec(...)
 				elseif  fallbackMode == "Shiny" then
-					return ShinyDec(...)
+					return ShinyDec(...)					
+					-- New Added
+				elseif fallbackMode == "Lua.Expert" then
+	                return LuaExpertDec(...)	
 				end
 			end
 		end
@@ -745,7 +801,7 @@ Main = (function()
 			return newTbl
 		end
 
-		-- serialize color3 sebelum encode
+		
 		local serializedData = recur(rawData)
 
 		local s, json = pcall(service.HttpService.JSONEncode, service.HttpService, serializedData)
@@ -824,10 +880,10 @@ Main = (function()
 				task.wait(10)
 				if not downloaded and callbackiflong then callbackiflong() end
 
-				task.wait(20) -- 30
+				task.wait(30) 
 				if not downloaded and callbackiftoolong then callbackiftoolong() end
 
-				task.wait(30) -- 60
+				task.wait(60) 
 				if not downloaded and XD then XD() end
 			end)
 			-- lmfao async makes it work to load big file
